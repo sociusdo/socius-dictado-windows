@@ -58,10 +58,16 @@ def _post_once(wav_path: str, key: str, model: str, mime: str | None = None) -> 
     if lang in ("es", "en"):
         data["language"] = lang
 
+    # WhatsApp voice notes are Ogg/Opus saved as ".opus", which OpenAI rejects by
+    # extension. The bytes are a valid Ogg, so upload them under an ".ogg" name.
+    upload_name = os.path.basename(wav_path)
+    if os.path.splitext(upload_name)[1].lower() == ".opus":
+        upload_name = os.path.splitext(upload_name)[0] + ".ogg"
+
     for attempt in range(6):
         try:
             with open(wav_path, "rb") as fh:
-                files = {"file": (os.path.basename(wav_path), fh, mime)}
+                files = {"file": (upload_name, fh, mime)}
                 resp = requests.post(
                     ENDPOINT,
                     headers={"Authorization": f"Bearer {key}"},
