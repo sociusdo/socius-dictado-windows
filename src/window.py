@@ -35,7 +35,10 @@ class MainWindow(QTabWidget):
         ctrl.history_changed.connect(self.settings.refresh_usage)
 
     def show_window(self):
+        if self.isMinimized():
+            self.showNormal()
         self.show(); self.raise_(); self.activateWindow()
+        _force_foreground(int(self.winId()))
 
     def show_settings(self):
         self.setCurrentWidget(self.settings)
@@ -217,6 +220,36 @@ class SettingsTab(QWidget):
             set_launch_at_login(on)
         except Exception:
             pass
+
+
+def _force_foreground(hwnd: int) -> None:
+    """Bring our window to the front. The orb never takes focus (so pasting lands in
+    the user's app), which means Windows' foreground lock refuses a plain
+    SetForegroundWindow and the window opens *behind* the active app. Briefly
+    attaching to the foreground thread's input is the standard workaround."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        user32.GetForegroundWindow.restype = wintypes.HWND
+        user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.c_void_p]
+        user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+        user32.AttachThreadInput.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.BOOL]
+        user32.BringWindowToTop.argtypes = [wintypes.HWND]
+        user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+        fg = user32.GetForegroundWindow()
+        fg_tid = user32.GetWindowThreadProcessId(fg, None) if fg else 0
+        me = kernel32.GetCurrentThreadId()
+        attached = bool(fg_tid and fg_tid != me and user32.AttachThreadInput(me, fg_tid, True))
+        try:
+            user32.BringWindowToTop(hwnd)
+            user32.SetForegroundWindow(hwnd)
+        finally:
+            if attached:
+                user32.AttachThreadInput(me, fg_tid, False)
+    except Exception:
+        pass
 
 
 def set_launch_at_login(enable: bool) -> None:

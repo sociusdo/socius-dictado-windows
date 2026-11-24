@@ -53,6 +53,12 @@ class Orb(QWidget):
             "QPushButton:hover{background:rgba(0,0,0,220);}")
         self.btn.hide()
 
+        # Grace period before hiding the hover button, so brief exits don't hide it.
+        self._hide_timer = QTimer(self)
+        self._hide_timer.setSingleShot(True)
+        self._hide_timer.setInterval(400)
+        self._hide_timer.timeout.connect(self._hide_btn_if_away)
+
         self._ring_timer = QTimer(self)
         self._ring_timer.timeout.connect(self._tick_ring)
 
@@ -68,14 +74,16 @@ class Orb(QWidget):
         self.move(geo.right() - W - 16, geo.bottom() - H + 6)
 
     def _apply_mask(self):
-        # A window mask is 1-bit (no antialiasing), so if it hugs the circle the edge
-        # looks jagged and the recording pulse (up to +16%) gets clipped. Make it a
-        # bit larger; the translucent background renders the smooth edge inside it.
-        mr = int(ORB_R * 1.16) + 3
-        region = QRegion(ORB_CX - mr, ORB_CY - mr, 2 * mr, 2 * mr, QRegion.RegionType.Ellipse)
-        if self.btn.isVisible():
-            region = region.united(QRegion(self.btn.geometry()))
-        self.setMask(region)
+        # No window mask on purpose. A mask is 1-bit (jagged edges), and on Windows
+        # every setMask() resets mouse tracking -> spurious leaveEvent -> the hover
+        # button flickers/hides. The translucent (layered) window already lets clicks
+        # through fully transparent pixels; paintEvent draws a near-invisible bridge
+        # between orb and button while it's shown so the hover isn't lost.
+        self.update()
+
+    def _bridge_rect(self) -> QRect:
+        b = self.btn.geometry()
+        return QRect(ORB_CX - ORB_R, b.top(), ORB_D, ORB_CY - b.top())
 
     # ---- state / level ----
     def _menu_open(self) -> bool:
@@ -109,6 +117,7 @@ class Orb(QWidget):
 
     # ---- hover ----
     def enterEvent(self, e):
+        self._hide_timer.stop()
         if not self._menu_open():
             self.btn.setText("Abrir")
         self.btn.show()
@@ -116,8 +125,13 @@ class Orb(QWidget):
 
     def leaveEvent(self, e):
         if not self._menu_open():
-            self.btn.hide()
-            self._apply_mask()
+            self._hide_timer.start()
+
+    def _hide_btn_if_away(self):
+        if self._menu_open() or self.underMouse() or self.btn.underMouse():
+            return
+        self.btn.hide()
+        self._apply_mask()
 
     def _menu_clicked(self):
         self.ctrl.menu_action()
@@ -185,6 +199,8 @@ class Orb(QWidget):
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.btn.isVisible():   # alpha 1: invisible, but hit-testable (keeps hover)
+            p.fillRect(self._bridge_rect(), QColor(0, 0, 0, 1))
         base = self._base_color()
         scale = 1.0 + (self._level * 0.16 if self.ctrl.state == C.RECORDING else 0.0)
         d = ORB_D * scale
