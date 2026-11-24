@@ -6,13 +6,17 @@ flotante** púrpura, siempre encima de todo: haces clic, hablas, y el texto se
 
 > Freebie del curso de Socius. 🎤
 
+### ⬇️ [Descargar SociusDictado.exe](https://github.com/sociusdo/socius-dictado-windows/releases/latest/download/SociusDictado.exe)
+Última versión: [v1.0](https://github.com/sociusdo/socius-dictado-windows/releases/tag/v1.0) · Windows 10/11 · no necesitas instalar Python.
+
 ## 🚀 La forma más fácil: deja que Claude te guíe
 Si usas **Claude Code**: descarga/clona esta carpeta, abre Claude Code dentro de ella y dile
 **"ayúdame a instalar Socius Dictado"**. Claude lee las instrucciones del repo (`CLAUDE.md`)
 y te lleva **paso a paso**: crear tu API key de OpenAI, instalar/compilar, permisos y probar.
 
 ## Para usarlo (ejecutable ya compilado)
-1. Descarga `SociusDictado.exe` (de la pestaña **Releases** de este repo).
+1. Descarga **[SociusDictado.exe](https://github.com/sociusdo/socius-dictado-windows/releases/latest/download/SociusDictado.exe)**
+   (o desde la página de [Releases](https://github.com/sociusdo/socius-dictado-windows/releases)).
 2. Ábrelo (Windows puede mostrar "Windows protegió tu PC" por ser un .exe sin
    firma de editor → **Más información → Ejecutar de todas formas**).
 3. La primera vez, pega tu **API key de OpenAI** (`sk-...`) en **Ajustes** (se
