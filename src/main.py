@@ -27,7 +27,12 @@ from window import MainWindow
 from hotkeys import HotKeys
 
 
-def _tray_icon() -> QIcon:
+def _app_icon() -> QIcon:
+    """The Socius Ü logo — used for the app, its window and the tray. Falls back
+    to a drawn purple dot if the bundled asset is ever missing."""
+    icon = QIcon(paths.app_icon())
+    if not icon.isNull():
+        return icon
     pm = QPixmap(32, 32); pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm); p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.setBrush(QColor(config.get("purple_hex") or theme.PURPLE)); p.setPen(Qt.PenStyle.NoPen)
@@ -36,8 +41,17 @@ def _tray_icon() -> QIcon:
 
 
 def main() -> int:
+    # Give Windows an explicit AppUserModelID so the taskbar shows our own icon
+    # (and groups correctly) instead of the generic Python one. No-op elsewhere.
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("com.socius.dictado")
+    except Exception:
+        pass
+
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)   # tray app: closing the window keeps the orb
+    app.setWindowIcon(_app_icon())         # taskbar / window / Alt-Tab
 
     store = Store()
     ctrl = Controller(store)
@@ -48,7 +62,7 @@ def main() -> int:
     orb.show()
 
     # Tray
-    tray = QSystemTrayIcon(_tray_icon(), app)
+    tray = QSystemTrayIcon(_app_icon(), app)
     tray.setToolTip("Socius Dictado")
     menu = QMenu()
     menu.addAction("Abrir ventana", window.show_window)

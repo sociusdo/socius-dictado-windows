@@ -6,6 +6,9 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt pyinstaller
 
 python -m PyInstaller --noconfirm --onefile --windowed --name "SociusDictado" ^
+  --icon "src\assets\icon.ico" ^
+  --add-data "src\assets\icon.png;assets" ^
+  --add-data "src\assets\icon.ico;assets" ^
   --collect-all sounddevice ^
   --collect-submodules keyring ^
   --hidden-import keyring.backends.Windows ^
