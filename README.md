@@ -4,7 +4,12 @@ Dictado por voz con tu propia API de OpenAI, estilo WhisperFlow. Un **círculo
 flotante** púrpura, siempre encima de todo: haces clic, hablas, y el texto se
 **pega solo donde está tu cursor**. Gemelo de la versión para Mac.
 
-> Freebie del curso de Socius. Uso personal.
+> Freebie del curso de Socius. 🎤
+
+## 🚀 La forma más fácil: deja que Claude te guíe
+Si usas **Claude Code**: descarga/clona esta carpeta, abre Claude Code dentro de ella y dile
+**"ayúdame a instalar Socius Dictado"**. Claude lee las instrucciones del repo (`CLAUDE.md`)
+y te lleva **paso a paso**: crear tu API key de OpenAI, instalar/compilar, permisos y probar.
 
 ## Para usarlo (ejecutable ya compilado)
 1. Descarga `SociusDictado.exe` (de la pestaña **Releases** de este repo).
