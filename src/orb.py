@@ -5,9 +5,10 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, QTimer, QPoint, QRect, QRectF
 from PyQt6.QtGui import (QPainter, QColor, QLinearGradient, QRadialGradient, QBrush,
-                         QPen, QRegion, QGuiApplication, QPainterPath, QFont)
+                         QPen, QRegion, QGuiApplication, QPainterPath, QFont, QPixmap)
 from PyQt6.QtWidgets import QWidget, QPushButton, QMenu
 
+import paths
 import theme
 import controller as C
 
@@ -30,6 +31,8 @@ class Orb(QWidget):
         self._drag_origin = None
         self._press_global = None
         self._moved = False
+        # The Socius mark (the Ü) shown as the orb face — brand always present.
+        self._mark = QPixmap(paths.app_icon())
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -48,9 +51,10 @@ class Orb(QWidget):
         self.btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn.clicked.connect(self._menu_clicked)
         self.btn.setStyleSheet(
-            "QPushButton{color:white;background:rgba(0,0,0,180);border:none;"
-            "border-radius:14px;font-size:12px;font-weight:600;}"
-            "QPushButton:hover{background:rgba(0,0,0,220);}")
+            "QPushButton{color:white;background:rgba(10,10,14,200);border:1px solid "
+            "rgba(255,255,255,20);border-radius:14px;font-size:12px;font-weight:600;"
+            "padding:0 10px;}"
+            "QPushButton:hover{background:rgba(10,10,14,235);}")
         self.btn.hide()
 
         # Grace period before hiding the hover button, so brief exits don't hide it.
@@ -196,61 +200,102 @@ class Orb(QWidget):
             return QColor(theme.RECORDING)
         return QColor(config_purple())
 
+    def _ring_color(self) -> QColor:
+        s = self.ctrl.state
+        if s == C.RECORDING:
+            return QColor(theme.RECORDING)
+        if s == C.DONE:
+            return QColor(theme.SUCCESS)
+        if s == C.COPIED_ONLY:
+            return QColor(theme.WARNING)
+        if s == C.ERROR:
+            return QColor(theme.RECORDING)
+        if s == C.TRANSCRIBING:
+            c = QColor(config_purple()); c.setAlpha(90); return c
+        c = QColor("white"); c.setAlpha(40); return c   # calm idle rim
+
     def paintEvent(self, _):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         if self.btn.isVisible():   # alpha 1: invisible, but hit-testable (keeps hover)
             p.fillRect(self._bridge_rect(), QColor(0, 0, 0, 1))
-        base = self._base_color()
+
         scale = 1.0 + (self._level * 0.16 if self.ctrl.state == C.RECORDING else 0.0)
         d = ORB_D * scale
         rect = QRectF(ORB_CX - d / 2, ORB_CY - d / 2, d, d)
 
-        grad = QLinearGradient(rect.topLeft(), rect.bottomLeft())
-        grad.setColorAt(0.0, QColor(theme.adjust(base.name(), 0.10)))
-        grad.setColorAt(0.55, base)
-        grad.setColorAt(1.0, QColor(theme.NEAR_BLACK))
-        p.setBrush(QBrush(grad))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.drawEllipse(rect)
+        # Soft drop shadow for depth.
+        sh = QRectF(rect.x(), rect.y() + 2, rect.width(), rect.height())
+        p.setPen(Qt.PenStyle.NoPen); p.setBrush(QColor(0, 0, 0, 70)); p.drawEllipse(sh)
 
-        sheen = QRadialGradient(rect.center().x() - d * 0.18, rect.center().y() - d * 0.22, d * 0.6)
-        c = QColor(theme.adjust(base.name(), 0.22)); c.setAlpha(120)
-        sheen.setColorAt(0.0, c); sheen.setColorAt(1.0, QColor(0, 0, 0, 0))
-        p.setBrush(QBrush(sheen)); p.drawEllipse(rect)
+        # Face: indigo circle (the mark's own background) with the Socius mark at
+        # 50% size, centered — so the smaller Ü blends seamlessly.
+        p.save()
+        clip = QPainterPath(); clip.addEllipse(rect); p.setClipPath(clip)
+        p.setPen(Qt.PenStyle.NoPen); p.setBrush(QColor("#3B3293")); p.drawEllipse(rect)
+        if not self._mark.isNull():
+            md = d * 0.5
+            p.drawPixmap(QRectF(rect.center().x() - md / 2, rect.center().y() - md / 2, md, md).toRect(),
+                         self._mark)
+        else:
+            base = self._base_color()
+            grad = QLinearGradient(rect.topLeft(), rect.bottomLeft())
+            grad.setColorAt(0.0, QColor(theme.adjust(base.name(), 0.10)))
+            grad.setColorAt(0.55, base)
+            grad.setColorAt(1.0, QColor(theme.NEAR_BLACK))
+            p.setBrush(QBrush(grad)); p.setPen(Qt.PenStyle.NoPen); p.drawEllipse(rect)
+        p.restore()
 
+        # Light-catching top rim.
+        rim = QLinearGradient(rect.topLeft(), rect.bottomLeft())
+        rim.setColorAt(0.0, QColor(255, 255, 255, 70)); rim.setColorAt(1.0, QColor(255, 255, 255, 8))
+        pen = QPen(QBrush(rim), 1); p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(rect.adjusted(0.5, 0.5, -0.5, -0.5))
+
+        # State ring.
+        rc = self._ring_color()
+        is_feedback = self.ctrl.state in (C.DONE, C.COPIED_ONLY, C.ERROR, C.RECORDING)
+        p.setPen(QPen(rc, 3 if is_feedback else 1.5))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(rect.adjusted(1.5, 1.5, -1.5, -1.5))
+
+        # Transcribing: spinning arc on top.
         if self.ctrl.state == C.TRANSCRIBING:
-            pen = QPen(QColor(theme.adjust(base.name(), 0.4)), 3)
+            pen = QPen(QColor(theme.adjust(config_purple(), 0.35)), 3)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
-            rr = QRectF(ORB_CX - ORB_R + 5, ORB_CY - ORB_R + 5, ORB_D - 10, ORB_D - 10)
-            p.drawArc(rr, int(-self._ring * 16), int(100 * 16))
+            p.drawArc(rect.adjusted(1.5, 1.5, -1.5, -1.5), int(-self._ring * 16), int(100 * 16))
 
-        self._draw_icon(p, QColor("white"))
+        self._draw_badge(p)
 
-    def _draw_icon(self, p: QPainter, color: QColor):
+    def _draw_badge(self, p: QPainter):
+        """Small corner badge for the brief done / copied / error moments — the Ü
+        mark stays visible underneath."""
         s = self.ctrl.state
+        spec = {C.DONE: ("check", QColor(theme.SUCCESS)),
+                C.COPIED_ONLY: ("copy", QColor(theme.WARNING)),
+                C.ERROR: ("bang", QColor(theme.RECORDING))}.get(s)
+        if not spec:
+            return
+        kind, color = spec
+        bx, by, br = ORB_CX + ORB_R - 6, ORB_CY + ORB_R - 6, 9
         p.save()
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(color)
-        cx, cy = ORB_CX, ORB_CY
-        if s == C.RECORDING:                      # stop square
-            p.drawRoundedRect(QRectF(cx - 7, cy - 7, 14, 14), 3, 3)
-        elif s == C.DONE:                          # check
-            pen = QPen(color, 3)
-            pen.setCapStyle(Qt.PenCapStyle.RoundCap); pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-            p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
-            path = QPainterPath(); path.moveTo(cx - 7, cy); path.lineTo(cx - 2, cy + 6); path.lineTo(cx + 8, cy - 6)
+        p.setPen(QPen(QColor(255, 255, 255, 235), 1.5)); p.setBrush(color)
+        p.drawEllipse(QRectF(bx - br, by - br, br * 2, br * 2))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        if kind == "check":
+            pen = QPen(QColor("white"), 2); pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin); p.setPen(pen)
+            path = QPainterPath(); path.moveTo(bx - 4, by); path.lineTo(bx - 1, by + 3); path.lineTo(bx + 4, by - 3)
             p.drawPath(path)
-        elif s == C.ERROR:
-            f = QFont(); f.setPixelSize(20); f.setBold(True); p.setFont(f); p.setPen(color)
-            p.drawText(QRectF(cx - 10, cy - 13, 20, 26), Qt.AlignmentFlag.AlignCenter, "!")
-        else:                                       # mic
-            p.drawRoundedRect(QRectF(cx - 5, cy - 11, 10, 15), 5, 5)
-            pen = QPen(color, 2); p.setPen(pen); p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawArc(QRectF(cx - 8, cy - 6, 16, 14), 200 * 16, 140 * 16)
-            p.setPen(QPen(color, 2)); p.drawLine(cx, cy + 7, cx, cy + 11)
-            p.drawLine(cx - 4, cy + 11, cx + 4, cy + 11)
+        elif kind == "copy":
+            pen = QPen(QColor("white"), 1.6); p.setPen(pen)
+            p.drawRoundedRect(QRectF(bx - 3, by - 4, 5, 6), 1, 1)
+            p.drawRoundedRect(QRectF(bx - 1, by - 2, 5, 6), 1, 1)
+        else:  # bang
+            f = QFont(); f.setPixelSize(12); f.setBold(True); p.setFont(f); p.setPen(QColor("white"))
+            p.drawText(QRectF(bx - br, by - br, br * 2, br * 2), Qt.AlignmentFlag.AlignCenter, "!")
         p.restore()
 
 

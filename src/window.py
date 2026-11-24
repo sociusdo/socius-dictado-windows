@@ -33,6 +33,55 @@ def _fmt_iso(iso: str) -> str:
         return iso
 
 
+def _rgba(hex_color: str, a: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{a})"
+
+
+def _app_qss(accent: str) -> str:
+    """A measured, system-font theme with the Socius accent. Uses palette() for
+    neutrals so it adapts to the user's light/dark Windows theme; only the accent,
+    radii, spacing and selection are opinionated."""
+    hover = theme.adjust(accent, -0.06)
+    tint = _rgba(accent, 0.14)
+    return f"""
+    * {{ font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; }}
+    QTabWidget::pane {{ border: none; }}
+    QTabBar::tab {{
+        background: transparent; padding: 7px 14px; margin-right: 2px;
+        border: none; border-bottom: 2px solid transparent; color: palette(text);
+    }}
+    QTabBar::tab:selected {{ color: {accent}; border-bottom: 2px solid {accent}; font-weight: 600; }}
+    QTabBar::tab:hover:!selected {{ color: {hover}; }}
+
+    QLineEdit, QComboBox, QTextEdit, QPlainTextEdit {{
+        border: 1px solid palette(mid); border-radius: 8px; padding: 6px 9px;
+        selection-background-color: {accent}; selection-color: white;
+    }}
+    QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QPlainTextEdit:focus {{
+        border: 1px solid {accent};
+    }}
+    QComboBox::drop-down {{ border: none; width: 22px; }}
+
+    QListWidget {{ border: 1px solid palette(mid); border-radius: 10px; padding: 4px; outline: none; }}
+    QListWidget::item {{ border-radius: 7px; padding: 7px 8px; margin: 1px 0; }}
+    QListWidget::item:hover {{ background: {tint}; }}
+    QListWidget::item:selected {{ background: {accent}; color: white; }}
+
+    QPushButton {{
+        border: 1px solid palette(mid); border-radius: 8px; padding: 6px 13px;
+        background: palette(button);
+    }}
+    QPushButton:hover {{ background: {tint}; border: 1px solid {accent}; }}
+    QPushButton:pressed {{ background: {_rgba(accent, 0.22)}; }}
+    QPushButton:disabled {{ color: palette(mid); border: 1px solid palette(midlight); }}
+
+    QCheckBox {{ spacing: 7px; }}
+    QSplitter::handle {{ background: transparent; }}
+    """
+
+
 class MainWindow(QTabWidget):
     def __init__(self, store: store_mod.Store, ctrl, quit_app):
         super().__init__()
@@ -49,6 +98,12 @@ class MainWindow(QTabWidget):
         self.addTab(self.settings, "Ajustes")
         ctrl.history_changed.connect(self.history.refresh)
         ctrl.history_changed.connect(self.settings.refresh_usage)
+        self.apply_theme()
+
+    def apply_theme(self):
+        import config
+        accent = config.get("purple_hex") or theme.PURPLE
+        self.setStyleSheet(_app_qss(accent))
 
     def show_window(self):
         if self.isMinimized():
@@ -573,6 +628,9 @@ class SettingsTab(QWidget):
         config.set("purple_hex", txt)
         for w in QApplication.topLevelWidgets():   # repaint the orb with the new color
             w.update()
+        win = self.window()
+        if hasattr(win, "apply_theme"):            # restyle the window with the new accent
+            win.apply_theme()
 
     def _save_key(self):
         if config.set_api_key(self.key.text()):
