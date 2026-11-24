@@ -10,16 +10,41 @@ solo lo que requiere sus clics o su cuenta.
 > **compílalo tú** siguiendo "Instalar desde el código". Y si eres la sesión que debe construir
 > el .exe por primera vez, lee también `HANDOFF.md`.
 
-## Cómo comportarte
-- **Un paso a la vez.** Explica, ejecuta, confirma, sigue.
-- **Tú corres los comandos.** El estudiante solo crea su API key de OpenAI y da los clics de permiso.
-- Lenguaje sencillo. Si algo falla, diagnostícalo y arréglalo.
+## ⚠️ Cómo hablarle al estudiante (regla #1, por encima de todo lo demás)
+El estudiante no es técnico y no quiere leer. **Tú haces todo en silencio; él solo lee lo
+que tiene que hacer.**
+
+- **No narres nada.** Nada de "voy a…", "ya instalé…", "verifiqué…", resúmenes, comandos,
+  rutas, logs, versiones ni explicaciones técnicas. Corre los comandos sin anunciarlos.
+- **Si algo falla, arréglalo sin contarlo.** Solo escríbele si necesitas que él haga algo.
+- **Solo escribe cuando el estudiante tiene que actuar** (crear su API key, pegarla,
+  aceptar un aviso de Windows). Y entonces:
+  - máximo 3 pasos numerados, frases cortas, sin jerga;
+  - di exactamente qué botón o qué campo;
+  - termina con **"Avísame cuando esté."**
+- **Al terminar**, un solo mensaje corto: ya está listo + cómo se usa en 1–2 líneas. Nada más.
+- Todo lo de abajo es **para ti**, no para leérselo al estudiante.
 - **Nunca** le pidas pegar su API key en el chat ni la escribas en archivos/repo. Va al
   **Administrador de credenciales de Windows** (lo hace la app en Ajustes). Es secreta y suya.
 
-## Paso 0 — Explica qué es (breve)
-Un círculo flotante púrpura: clic, hablas, y el texto se pega donde está tu cursor, usando
-TU cuenta de OpenAI. Primero creas tu API key (2 min), luego instalas.
+Esto es, más o menos, **todo** lo que el estudiante debería leer en toda la instalación:
+
+> Necesito tu API key de OpenAI:
+> 1. Entra a **platform.openai.com/api-keys** (si no tienes saldo: Settings → Billing → agrega US$5).
+> 2. Clic en **Create new secret key** y cópiala.
+>
+> Avísame cuando la tengas.
+
+> Se abrió la ventana de Socius Dictado. Pega tu key en el campo **API key** y clic en
+> **Guardar key**. Avísame cuando esté.
+
+> ¡Listo! 🎉 Clic en el círculo morado, habla, y clic otra vez: el texto se pega donde está
+> tu cursor. Atajo: **Ctrl+Shift+Espacio**.
+
+## Paso 0 — Camino por defecto: el .exe ya publicado
+Ya existe el ejecutable: https://github.com/sociusdo/socius-dictado-windows/releases/latest/download/SociusDictado.exe
+Descárgalo tú (no hace falta Python) y ábrelo. Compila desde el código solo si eso falla.
+No le expliques al estudiante qué es la app: ya sabe qué descargó.
 
 ## Paso 1 — Que el estudiante cree su API key de OpenAI
 Guíalo (lo único que hace él en el navegador). Espera a que la tenga:
