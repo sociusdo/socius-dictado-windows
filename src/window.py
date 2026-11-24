@@ -48,12 +48,15 @@ def _app_qss(accent: str) -> str:
     return f"""
     * {{ font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; }}
     QTabWidget::pane {{ border: none; }}
+    QTabBar {{ qproperty-drawBase: 0; }}
+    QTabWidget::tab-bar {{ alignment: center; }}
+    /* Pill-style segmented tabs: selected on the accent, like the macOS app. */
     QTabBar::tab {{
-        background: transparent; padding: 7px 14px; margin-right: 2px;
-        border: none; border-bottom: 2px solid transparent; color: palette(text);
+        background: transparent; color: palette(text);
+        padding: 7px 16px; margin: 4px 2px; border: none; border-radius: 9px;
     }}
-    QTabBar::tab:selected {{ color: {accent}; border-bottom: 2px solid {accent}; font-weight: 600; }}
-    QTabBar::tab:hover:!selected {{ color: {hover}; }}
+    QTabBar::tab:selected {{ background: {accent}; color: white; font-weight: 600; }}
+    QTabBar::tab:hover:!selected {{ background: {tint}; }}
 
     QLineEdit, QComboBox, QTextEdit, QPlainTextEdit {{
         border: 1px solid palette(mid); border-radius: 8px; padding: 6px 9px;
@@ -64,10 +67,14 @@ def _app_qss(accent: str) -> str:
     }}
     QComboBox::drop-down {{ border: none; width: 22px; }}
 
-    QListWidget {{ border: 1px solid palette(mid); border-radius: 10px; padding: 4px; outline: none; }}
-    QListWidget::item {{ border-radius: 7px; padding: 7px 8px; margin: 1px 0; }}
+    /* History list as cards: each row a rounded tile. */
+    QListWidget {{ border: none; background: transparent; padding: 2px; outline: none; }}
+    QListWidget::item {{
+        border-radius: 11px; padding: 10px 11px; margin: 3px 2px;
+        background: rgba(127,127,127,0.08);
+    }}
     QListWidget::item:hover {{ background: {tint}; }}
-    QListWidget::item:selected {{ background: {accent}; color: white; }}
+    QListWidget::item:selected {{ background: {_rgba(accent, 0.16)}; color: palette(text); }}
 
     QPushButton {{
         border: 1px solid palette(mid); border-radius: 8px; padding: 6px 13px;
