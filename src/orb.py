@@ -34,8 +34,12 @@ class Orb(QWidget):
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool)
+            | Qt.WindowType.Tool
+            # Never take focus (WS_EX_NOACTIVATE): clicking the orb must leave the
+            # caret in the user's app so Ctrl+V lands there, like the Mac app.
+            | Qt.WindowType.WindowDoesNotAcceptFocus)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setFixedSize(W, H)
         self.setMouseTracking(True)
 
@@ -64,7 +68,11 @@ class Orb(QWidget):
         self.move(geo.right() - W - 16, geo.bottom() - H + 6)
 
     def _apply_mask(self):
-        region = QRegion(ORB_CX - ORB_R, ORB_CY - ORB_R, ORB_D, ORB_D, QRegion.RegionType.Ellipse)
+        # A window mask is 1-bit (no antialiasing), so if it hugs the circle the edge
+        # looks jagged and the recording pulse (up to +16%) gets clipped. Make it a
+        # bit larger; the translucent background renders the smooth edge inside it.
+        mr = int(ORB_R * 1.16) + 3
+        region = QRegion(ORB_CX - mr, ORB_CY - mr, 2 * mr, 2 * mr, QRegion.RegionType.Ellipse)
         if self.btn.isVisible():
             region = region.united(QRegion(self.btn.geometry()))
         self.setMask(region)

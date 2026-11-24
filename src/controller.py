@@ -4,8 +4,11 @@ Background work runs on threads; UI updates are delivered through Qt signals so
 the orb/window always update on the main thread.
 """
 from __future__ import annotations
+import logging
 import threading
 import time
+
+log = logging.getLogger("controller")
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -76,12 +79,14 @@ class Controller(QObject):
             self._beep(880)
             self._set_state(RECORDING)
         except Exception as e:
+            log.exception("recorder start failed")
             self.last_error = str(e)
             self._set_state(ERROR)
 
     def _finish_and_transcribe(self) -> None:
         wav = self.recorder.stop()
         self._last_duration = time.time() - self._recording_started
+        log.info("recording stopped: %.1fs wav=%s", self._last_duration, wav)
         self._beep(660)
         if not wav:
             self._set_state(IDLE)
@@ -110,11 +115,13 @@ class Controller(QObject):
                 threading.Thread(target=self._title_worker, args=(item_id, text), daemon=True).start()
             self._deliver(text)
         except TranscribeError as e:
+            log.error("transcribe failed: %s", e)
             if not self._cancelled:
                 self.last_error = str(e)
                 self._set_state(ERROR)
                 self._flash_back()
         except Exception as e:
+            log.exception("worker failed")
             if not self._cancelled:
                 self.last_error = str(e)
                 self._set_state(ERROR)
@@ -128,6 +135,7 @@ class Controller(QObject):
 
     def _deliver(self, text: str) -> None:
         ok = paster.paste_at_cursor(text)   # Windows: no permission needed
+        log.info("delivered %d chars, pasted=%s", len(text), ok)
         self._set_state(DONE if ok else COPIED_ONLY)
         self._flash_back()
 

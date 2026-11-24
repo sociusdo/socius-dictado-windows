@@ -4,7 +4,15 @@ Floating purple mic orb that records your voice, transcribes it with OpenAI and
 pastes it where your cursor is. Runs as a tray app (no taskbar window).
 """
 from __future__ import annotations
+import logging
 import sys
+
+import paths
+
+logging.basicConfig(
+    filename=str(paths.debug_log()), level=logging.INFO, encoding="utf-8",
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+sys.excepthook = lambda t, v, tb: logging.getLogger("crash").error("unhandled", exc_info=(t, v, tb))
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QAction

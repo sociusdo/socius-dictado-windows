@@ -32,6 +32,7 @@ class MainWindow(QTabWidget):
         self.addTab(self.history, "Historial")
         self.addTab(self.settings, "Ajustes")
         ctrl.history_changed.connect(self.history.refresh)
+        ctrl.history_changed.connect(self.settings.refresh_usage)
 
     def show_window(self):
         self.show(); self.raise_(); self.activateWindow()
@@ -172,18 +173,38 @@ class SettingsTab(QWidget):
         form.addRow("", self.login)
 
         self.color = QLineEdit(config.get("purple_hex") or theme.PURPLE)
-        self.color.editingFinished.connect(lambda: config.set("purple_hex", self.color.text().strip()))
+        self.color.editingFinished.connect(self._set_color)
         form.addRow("Color (hex)", self.color)
 
-        mins = sum(i.duration for i in store.items) / 60.0
-        cost = sum((i.duration / 60.0) * (0.003 if "mini" in i.model else 0.006) for i in store.items)
-        form.addRow("Uso", QLabel(f"{len(store.items)} dictados · {mins:.1f} min · ≈${cost:.3f}"))
+        self.usage = QLabel()
+        form.addRow("Uso", self.usage)
+        self.refresh_usage()
 
         self.hk = QLabel("Dictar: Ctrl+Shift+Espacio    ·    Mostrar/ocultar: Ctrl+Shift+D")
         form.addRow("Atajos", self.hk)
 
         quit_btn = QPushButton("Salir de Socius Dictado"); quit_btn.clicked.connect(self.quit_app)
         form.addRow("", quit_btn)
+
+    def refresh_usage(self):
+        items = self.store.items
+        mins = sum(i.duration for i in items) / 60.0
+        cost = sum((i.duration / 60.0) * (0.003 if "mini" in i.model else 0.006) for i in items)
+        self.usage.setText(f"{len(items)} dictados · {mins:.1f} min · ≈${cost:.3f}")
+
+    def showEvent(self, e):
+        self.refresh_usage()
+        super().showEvent(e)
+
+    def _set_color(self):
+        from PyQt6.QtGui import QColor
+        txt = self.color.text().strip()
+        if not QColor(txt).isValid():
+            self.color.setText(config.get("purple_hex") or theme.PURPLE)
+            return
+        config.set("purple_hex", txt)
+        for w in QApplication.topLevelWidgets():   # repaint the orb with the new color
+            w.update()
 
     def _save_key(self):
         if config.set_api_key(self.key.text()):
@@ -204,10 +225,16 @@ def set_launch_at_login(enable: bool) -> None:
     import winreg
     run_key = r"Software\Microsoft\Windows\CurrentVersion\Run"
     name = "SociusDictado"
-    exe = sys.executable  # when frozen (PyInstaller) this is the .exe
+    import os
+    if getattr(sys, "frozen", False):
+        cmd = f'"{sys.executable}"'            # PyInstaller .exe
+    else:                                      # running from source: pythonw + main.py
+        pyw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+        main_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+        cmd = f'"{pyw}" "{main_py}"'
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, run_key, 0, winreg.KEY_SET_VALUE) as k:
         if enable:
-            winreg.SetValueEx(k, name, 0, winreg.REG_SZ, f'"{exe}"')
+            winreg.SetValueEx(k, name, 0, winreg.REG_SZ, cmd)
         else:
             try:
                 winreg.DeleteValue(k, name)
