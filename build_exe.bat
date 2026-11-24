@@ -1,10 +1,11 @@
 @echo off
 REM Empaqueta un .exe único (Windows) con PyInstaller.
 REM Resultado: dist\SociusDictado.exe  (eso es lo que se le manda al usuario final)
+cd /d "%~dp0"
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt pyinstaller
 
-pyinstaller --noconfirm --onefile --windowed --name "SociusDictado" ^
+python -m PyInstaller --noconfirm --onefile --windowed --name "SociusDictado" ^
   --collect-all sounddevice ^
   --collect-submodules keyring ^
   --hidden-import keyring.backends.Windows ^
