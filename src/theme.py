@@ -1,7 +1,7 @@
 """Socius branding colors (mirrors the macOS app)."""
 from __future__ import annotations
 
-PURPLE = "#6D28D9"      # brand purple
+PURPLE = "#6D4AFF"      # premium periwinkle-violet (Socius family)
 NEAR_BLACK = "#0B0B0D"
 RECORDING = "#EF4444"   # red while recording
 SUCCESS = "#22C55E"     # green ~1s when pasted

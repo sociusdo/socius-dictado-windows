@@ -225,17 +225,16 @@ class Orb(QWidget):
         d = ORB_D * scale
         rect = QRectF(ORB_CX - d / 2, ORB_CY - d / 2, d, d)
 
-        # Soft drop shadow for depth.
-        sh = QRectF(rect.x(), rect.y() + 2, rect.width(), rect.height())
-        p.setPen(Qt.PenStyle.NoPen); p.setBrush(QColor(0, 0, 0, 70)); p.drawEllipse(sh)
+        # No drop shadow: the window is transparent, so any shadow outside the orb
+        # smears onto the desktop. Depth comes only from the inner light rim below.
 
         # Face: indigo circle (the mark's own background) with the Socius mark at
-        # 50% size, centered — so the smaller Ü blends seamlessly.
+        # 75% size, centered — so the smaller Ü blends seamlessly.
         p.save()
         clip = QPainterPath(); clip.addEllipse(rect); p.setClipPath(clip)
         p.setPen(Qt.PenStyle.NoPen); p.setBrush(QColor("#3B3293")); p.drawEllipse(rect)
         if not self._mark.isNull():
-            md = d * 0.5
+            md = d * 0.75
             p.drawPixmap(QRectF(rect.center().x() - md / 2, rect.center().y() - md / 2, md, md).toRect(),
                          self._mark)
         else:

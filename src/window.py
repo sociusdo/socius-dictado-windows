@@ -77,6 +77,22 @@ def _app_qss(accent: str) -> str:
     QPushButton:pressed {{ background: {_rgba(accent, 0.22)}; }}
     QPushButton:disabled {{ color: palette(mid); border: 1px solid palette(midlight); }}
 
+    /* Primary action: filled accent gradient, white text. */
+    QPushButton[accent="true"] {{
+        border: 1px solid {theme.adjust(accent, -0.10)}; border-radius: 8px;
+        padding: 7px 15px; color: white; font-weight: 600;
+        background: qlineargradient(x1:0,y1:0, x2:0,y2:1,
+            stop:0 {theme.adjust(accent, 0.10)}, stop:1 {theme.adjust(accent, -0.08)});
+    }}
+    QPushButton[accent="true"]:hover {{
+        background: qlineargradient(x1:0,y1:0, x2:0,y2:1,
+            stop:0 {theme.adjust(accent, 0.14)}, stop:1 {theme.adjust(accent, -0.04)});
+    }}
+    QPushButton[accent="true"]:pressed {{ background: {theme.adjust(accent, -0.10)}; }}
+    QPushButton[accent="true"]:disabled {{
+        color: rgba(255,255,255,160); background: {_rgba(accent, 0.45)}; border: none;
+    }}
+
     QCheckBox {{ spacing: 7px; }}
     QSplitter::handle {{ background: transparent; }}
     """
@@ -149,6 +165,7 @@ class TranscriptEditor(QWidget):
 
         row = QHBoxLayout()
         self.copy_btn = QPushButton("Copiar"); self.copy_btn.clicked.connect(self._copy)
+        self.copy_btn.setProperty("accent", "true")
         self.save_btn = QPushButton("Guardar versión"); self.save_btn.clicked.connect(self._snapshot)
         self.ver_btn = QPushButton("Versiones"); self.ver_btn.clicked.connect(self._versions)
         row.addWidget(self.copy_btn); row.addWidget(self.save_btn); row.addWidget(self.ver_btn)
@@ -246,6 +263,7 @@ class VersionsDialog(QDialog):
 
         row = QHBoxLayout()
         self.restore_btn = QPushButton("Restaurar esta versión")
+        self.restore_btn.setProperty("accent", "true")
         self.restore_btn.clicked.connect(self._restore)
         close = QPushButton("Cerrar"); close.clicked.connect(self.reject)
         row.addStretch(1); row.addWidget(self.restore_btn); row.addWidget(close)
@@ -427,6 +445,7 @@ class FilesTab(QWidget):
             tools.addWidget(w)
         tools.addStretch(1)
         self.transcribe_btn = QPushButton("Transcribir"); self.transcribe_btn.clicked.connect(self._run)
+        self.transcribe_btn.setProperty("accent", "true")
         self.transcribe_btn.setEnabled(False)
         self.clear_btn = QPushButton("Limpiar"); self.clear_btn.clicked.connect(self._clear)
         tools.addWidget(self.transcribe_btn); tools.addWidget(self.clear_btn)
