@@ -109,12 +109,16 @@ requirements.txt, run.bat, build_exe.bat, README.md
   una función lista sin haberla visto.
 - No cambies el diseño/colores de marca (púrpura #6D28D9 → negro). Mantén la paridad con Mac.
 
-## GitHub (plan de Luis)
-Esto se publica como **repo público** (freebie del curso). Hay dos repos: uno Mac y uno
-Windows. Para este (Windows): el repo se llama algo como `socius-dictado-windows` bajo la
-cuenta `sociusdo`. Cuando el `.exe` funcione, súbelo como **Release** para que los estudiantes
-solo descarguen el ejecutable. (Luis o la sesión de Mac pueden crear el repo; tú súbele el .exe
-y confirma que el README está claro.)
+## GitHub (ya creado)
+Repo público: **https://github.com/sociusdo/socius-dictado-windows** (cuenta `sociusdo`).
+La versión Mac vive en https://github.com/sociusdo/socius-dictado-mac.
+Puedes **clonar** el repo de Windows en vez de usar el zip:
+```bat
+gh repo clone sociusdo/socius-dictado-windows
+```
+Cuando el `.exe` funcione, súbelo como **Release** (`gh release create v1.0 dist\SociusDictado.exe
+--title "v1.0" --notes "Primera versión"`) para que los estudiantes solo descarguen el ejecutable.
+Commitea y haz push de cualquier arreglo Windows que hagas.
 
 ## Estado al entregar este handoff (qué YA se verificó en Mac)
 - **Sintaxis** de todos los módulos: OK (`py_compile`).
