@@ -33,7 +33,23 @@ def _dictionary_prompt() -> str | None:
     return "Términos y nombres propios: " + ", ".join(terms)
 
 
-def _post_once(wav_path: str, key: str, model: str) -> str:
+_MIME = {
+    ".mp3": "audio/mpeg", ".mpga": "audio/mpeg", ".mpeg": "audio/mpeg", ".mpg": "audio/mpeg",
+    ".wav": "audio/wav", ".flac": "audio/flac", ".ogg": "audio/ogg", ".oga": "audio/ogg",
+    ".opus": "audio/ogg", ".webm": "audio/webm", ".mov": "video/quicktime",
+    ".m4a": "audio/mp4", ".m4b": "audio/mp4", ".mp4": "audio/mp4",
+    ".aiff": "audio/aiff", ".aif": "audio/aiff", ".caf": "audio/aiff",
+    ".amr": "audio/amr", ".3gp": "audio/3gpp",
+}
+
+
+def _mime_for(path: str) -> str:
+    return _MIME.get(os.path.splitext(path)[1].lower(), "audio/m4a")
+
+
+def _post_once(wav_path: str, key: str, model: str, mime: str | None = None) -> str:
+    if mime is None:
+        mime = _mime_for(wav_path)
     data = {"model": model, "response_format": "text"}
     prompt = _dictionary_prompt()
     if prompt:
@@ -45,7 +61,7 @@ def _post_once(wav_path: str, key: str, model: str) -> str:
     for attempt in range(6):
         try:
             with open(wav_path, "rb") as fh:
-                files = {"file": (os.path.basename(wav_path), fh, "audio/wav")}
+                files = {"file": (os.path.basename(wav_path), fh, mime)}
                 resp = requests.post(
                     ENDPOINT,
                     headers={"Authorization": f"Bearer {key}"},
@@ -116,3 +132,26 @@ def transcribe(wav_path: str) -> str:
                 os.remove(cp)
             except OSError:
                 pass
+
+
+def transcribe_path(path: str) -> str:
+    """Transcribe any audio file (drag-and-drop). WAV goes through the chunking
+    path; other formats are posted directly to OpenAI (<=25MB)."""
+    key = config.get_api_key()
+    if not key:
+        raise TranscribeError("No hay API key de OpenAI")
+    model = config.get("model") or "gpt-4o-mini-transcribe"
+    if os.path.splitext(path)[1].lower() == ".wav":
+        return transcribe(path)
+    return _post_once(path, key, model)
+
+
+def file_duration(path: str) -> float:
+    """Seconds of audio, best-effort (exact for WAV, 0 otherwise)."""
+    try:
+        if os.path.splitext(path)[1].lower() == ".wav":
+            with wave.open(path, "rb") as w:
+                return w.getnframes() / float(w.getframerate())
+    except Exception:
+        pass
+    return 0.0

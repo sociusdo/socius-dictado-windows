@@ -17,6 +17,7 @@ class Item:
     model: str
     text: str
     ai_title: Optional[str] = None
+    versions: Optional[list] = None   # edit history: [{"id","date","text"}]; None for old items
 
     @property
     def words(self) -> int:
@@ -78,8 +79,10 @@ class Store:
             pass
 
     def add(self, text: str, duration: float, model: str) -> str:
-        item = Item(id=str(uuid.uuid4()), date=datetime.now().isoformat(),
-                    duration=duration, model=model, text=text, ai_title=None)
+        now = datetime.now().isoformat()
+        item = Item(id=str(uuid.uuid4()), date=now,
+                    duration=duration, model=model, text=text, ai_title=None,
+                    versions=[{"id": str(uuid.uuid4()), "date": now, "text": text}])
         self.items.insert(0, item)
         self._save()
         return item.id
@@ -88,6 +91,46 @@ class Store:
         for it in self.items:
             if it.id == item_id:
                 it.ai_title = title
+                self._save()
+                return
+
+    # ---- editing + version history ----
+    def versions_of(self, item_id: str) -> list:
+        for it in self.items:
+            if it.id == item_id:
+                return it.versions if it.versions else [{"id": it.id, "date": it.date, "text": it.text}]
+        return []
+
+    def update_text(self, item_id: str, new_text: str) -> None:
+        """Live edit: set current text, no new version."""
+        for it in self.items:
+            if it.id == item_id and it.text != new_text:
+                it.text = new_text
+                self._save()
+                return
+
+    def snapshot_version(self, item_id: str) -> None:
+        """Record the current text as a new version if it changed."""
+        for it in self.items:
+            if it.id == item_id:
+                vs = it.versions if it.versions else [{"id": it.id, "date": it.date, "text": it.text}]
+                if not vs or vs[-1]["text"] != it.text:
+                    vs = list(vs) + [{"id": str(uuid.uuid4()), "date": datetime.now().isoformat(), "text": it.text}]
+                    it.versions = vs
+                    self._save()
+                elif it.versions is None:
+                    it.versions = vs
+                    self._save()
+                return
+
+    def restore(self, item_id: str, version: dict) -> None:
+        for it in self.items:
+            if it.id == item_id:
+                vs = it.versions if it.versions else [{"id": it.id, "date": it.date, "text": it.text}]
+                it.text = version["text"]
+                if not vs or vs[-1]["text"] != version["text"]:
+                    vs = list(vs) + [{"id": str(uuid.uuid4()), "date": datetime.now().isoformat(), "text": version["text"]}]
+                it.versions = vs
                 self._save()
                 return
 
