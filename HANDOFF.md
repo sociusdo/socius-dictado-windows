@@ -65,7 +65,18 @@ requirements.txt, run.bat, build_exe.bat, README.md
    Python) — PyInstaller a veces omite imports; si truena, agrega `--hidden-import` o
    `--collect-all` del módulo que falte y recompila.
 6. **Entrega**: deja `dist\SociusDictado.exe` listo; ese es el archivo final para Luis.
-   Si vas a publicarlo en GitHub Releases, súbelo ahí (ver "GitHub" abajo).
+7. **PASO FINAL OBLIGATORIO — crear el Release en GitHub** (Luis lo pidió). SOLO cuando el
+   `.exe` esté probado y funcionando:
+   - Asegura que `gh` esté autenticado en esta PC Windows: `gh auth status`. Si no, corre
+     `gh auth login` (cuenta **sociusdo**) y guía a Luis a aprobarlo en el navegador.
+   - Crea el Release con el ejecutable adjunto:
+     ```bat
+     gh release create v1.0 "dist\SociusDictado.exe" --repo sociusdo/socius-dictado-windows --title "Socius Dictado v1.0" --notes "Dictado por voz con OpenAI. Descarga SociusDictado.exe y ábrelo (si Windows avisa: Mas informacion -> Ejecutar de todas formas)."
+     ```
+   - Verifica que el asset quedó subido: `gh release view v1.0 --repo sociusdo/socius-dictado-windows`.
+   - Así los estudiantes de Windows solo descargan el .exe desde Releases, sin compilar nada.
+   - Si `gh` no está disponible en Windows, dile a Luis que te pase el `.exe` de vuelta a la
+     sesión de Mac (que sí tiene `gh` autenticado) para crear el Release desde allá.
 
 ## Checklist de pruebas (todo debe verse funcionando)
 - [ ] El círculo aparece abajo a la derecha, encima de otras ventanas, sin botón en la barra de tareas.

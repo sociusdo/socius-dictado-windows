@@ -60,6 +60,16 @@ di una frase, clic de nuevo. El texto debe pegarse solo.
 Atajos: **Ctrl+Shift+Espacio** dictar, **Ctrl+Shift+D** mostrar/ocultar el círculo.
 Clic derecho en el círculo = menú (Abrir, Cancelar, Ajustes, Salir).
 
+## Paso final (si eres la sesión que compila el .exe) — crear el Release
+Cuando el `.exe` esté probado y funcionando, publícalo en GitHub Releases para que los demás
+estudiantes solo lo descarguen (no tengan que compilar). Luis lo pidió explícitamente.
+1. `gh auth status` (si no está, `gh auth login`, cuenta **sociusdo**).
+2. ```bat
+   gh release create v1.0 "dist\SociusDictado.exe" --repo sociusdo/socius-dictado-windows --title "Socius Dictado v1.0" --notes "Descarga SociusDictado.exe y abrelo."
+   ```
+3. Verifica: `gh release view v1.0 --repo sociusdo/socius-dictado-windows`.
+Detalle completo en `HANDOFF.md`.
+
 ## Reglas
 - La API key solo al Administrador de credenciales, nunca al repo ni al chat.
 - Verifica antes de decir "listo": que el estudiante vea el texto pegarse.
